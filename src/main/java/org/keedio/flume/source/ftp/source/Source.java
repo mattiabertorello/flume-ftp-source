@@ -4,6 +4,7 @@
 package org.keedio.flume.source.ftp.source;
 
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.flume.Context;
 import org.apache.flume.Event;
@@ -52,6 +53,7 @@ public class Source extends AbstractSource implements Configurable, PollableSour
   private SourceCounter sourceCounter;
   private String workingDirectory;
   private KeedioFileFilter keedioFileFilter;
+  private String compressionFormat;
 
   /**
    * Request keedioSource to the factory
@@ -80,6 +82,7 @@ public class Source extends AbstractSource implements Configurable, PollableSour
     workingDirectory = keedioSource.getWorkingDirectory();
     keedioFileFilter = new KeedioFileFilter(keedioSource.getKeedioFilterRegex());
     keedioSource.checkPreviousMap();
+    compressionFormat = context.getString("files.compressionFormat", "");
   }
 
   /**
@@ -270,6 +273,25 @@ public class Source extends AbstractSource implements Configurable, PollableSour
   }
 
   /**
+   * Get the buffered stream and if It's compressed will be decompress with the GZIPInputStream class
+   *
+   * @param  inputStream
+   * @return BufferedReader
+   * @throws IOException
+   */
+  private BufferedReader getBufferedStream(InputStream inputStream) throws IOException {
+
+    InputStream inputStreamDecompressed;
+    if (compressionFormat.equals("gz")) {
+      inputStreamDecompressed = new GZIPInputStream(inputStream);
+    } else {
+      inputStreamDecompressed = inputStream;
+    }
+
+    return new BufferedReader(new InputStreamReader(inputStreamDecompressed, Charset.defaultCharset()));
+  }
+
+  /**
    * Read retrieved stream from ftpclient into byte[] and process. If
    * flushlines is true the retrieved inputstream will be readed by lines. And
    * the type of file is set to ASCII from KeedioSource.
@@ -288,7 +310,7 @@ public class Source extends AbstractSource implements Configurable, PollableSour
     if (keedioSource.isFlushLines()) {
       try {
         inputStream.skip(position);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream, Charset.defaultCharset()))) {
+        try (BufferedReader in = getBufferedStream(inputStream)) {
           String line = null;
 
           while ((line = in.readLine()) != null) {

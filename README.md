@@ -203,6 +203,9 @@ If this parameter is omitted, default value will be set to 10000 ms.
 ###### (Thanks to Erik Schmiegelow : https://github.com/schmiegelow/flume-ftp-source)
 >     agent.sources.<fpt1 | ftps1 | sftp1>.flushlines = (true | false)      
 
+###### Decompression on-the-fly if the files are compressed in GZIP
+>     agent.sources.<fpt1 | ftps1 | sftp1>.files.compressionFormat = gz      
+
 
 ###### Force the size of events in bytes. I omitted, default is 1KB.
 Customizing this option is intended for particular cases.
